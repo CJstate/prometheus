@@ -3550,6 +3550,7 @@ func BenchmarkScrapeCacheMetadata(b *testing.B) {
 				}
 				c.iter++
 			}
+			runtime.KeepAlive(warmCache)
 		})
 	}
 }
