@@ -289,12 +289,6 @@ loop:
 			if sl.cache.getDropped(met) {
 				continue
 			}
-			// Intern the current family's parsed metadata and name once for all non-dropped series in the family.
-			if parsedMetaDirty {
-				origMetaHandle = unique.Make(parsedMeta)
-				origMFNameHandle = internBytes(parsedMFName)
-				parsedMetaDirty = false
-			}
 			ce, seriesCached, seriesAlreadyScraped = sl.cache.get(met)
 			var (
 				sm            seriesMetaEntry
@@ -302,6 +296,19 @@ loop:
 			)
 			if seriesCached && sl.cache.seriesMeta != nil {
 				sm, hasCachedMeta = sl.cache.seriesMeta[ce]
+			}
+			// Intern the current family's parsed metadata and name once for all non-dropped series in the family.
+			// On warm scrapes where the series already has cached handles matching parsedMeta and parsedMFName,
+			// reuse those handles directly to avoid calling unique.Make.
+			if parsedMetaDirty {
+				if hasCachedMeta && stringValue(sm.origMFName) == yoloString(parsedMFName) && metadataValue(sm.origMeta).Equals(parsedMeta) {
+					origMFNameHandle = sm.origMFName
+					origMetaHandle = sm.origMeta
+				} else {
+					origMetaHandle = unique.Make(parsedMeta)
+					origMFNameHandle = internBytes(parsedMFName)
+				}
+				parsedMetaDirty = false
 			}
 
 			if seriesCached && hasCachedMeta && sm.origMFName == origMFNameHandle && sm.origMeta == origMetaHandle {
