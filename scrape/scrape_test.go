@@ -2613,11 +2613,12 @@ func TestScrapeLoopAppend_StartTimeSynthesis_MetadataChanges(t *testing.T) {
 						require.Len(t, appTest.ResultSamples(), before+1)
 						got := appTest.ResultSamples()[before]
 						wantValue, wantST := 5.0, int64(1000)
-						if tc.compatible {
+						switch {
+						case tc.compatible:
 							wantValue = float64(5 * i)
-						} else if i == 5 {
+						case i == 5:
 							wantST = 5000
-						} else if i >= 2 {
+						case i >= 2:
 							wantST = 3000
 							if !tc.cumulative {
 								wantValue, wantST = float64(10+5*i), 0
